@@ -41,12 +41,36 @@ def add():
     return redirect(url_for('index'))
 
 
+@app.route("/check/<int:task_id>")
+def check(task_id):
+    task_to_modify = db.get_or_404(Tasks, task_id)
+    task_to_modify.completed = True
+    db.session.commit()
+    return redirect(url_for('index'))
+
+
 @app.route("/delete/<int:task_id>")
 def delete_task(task_id):
     task_to_delete = db.get_or_404(Tasks, task_id)
     db.session.delete(task_to_delete)
     db.session.commit()
     return redirect(url_for('index'))
+
+
+@app.route('/process_selection', methods=['POST'])
+def process_selection():
+    selected_filter = request.form.get('filter')
+    if selected_filter:
+        if selected_filter == "done":
+            tasks = Tasks.query.filter_by(completed=True).all()
+        elif selected_filter == "pending":
+            tasks = Tasks.query.filter_by(completed=False).all()
+        else:
+            result = db.session.execute(db.select(Tasks))
+            tasks = result.scalars().all()
+        return render_template("index.html", tasks=tasks)
+    else:
+        return redirect(url_for('index'))
 
 
 @app.route('/', methods=["GET", "POST"])
